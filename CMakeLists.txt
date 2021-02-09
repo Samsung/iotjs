@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.5)
 include(CheckCCompilerFlag)
 
 project(IOTJS C)
@@ -88,8 +88,7 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
   if(HAS_NO_PIE AND NOT "${TARGET_OS}" STREQUAL "darwin")
     iotjs_add_link_flags(-no-pie)
   endif()
-else()
-
+elseif(HAS_NO_PIE)
   iotjs_add_compile_flags(-fPIE)
   if("${TARGET_OS}" STREQUAL "darwin")
       iotjs_add_link_flags(-Wl,-pie)
@@ -98,7 +97,7 @@ else()
   endif()
 endif()
 
-if (CREATE_SHARED_LIB)
+if (CREATE_SHARED_LIB AND NOT USING_MSVC)
   iotjs_add_compile_flags(-fPIC)
 endif()
 

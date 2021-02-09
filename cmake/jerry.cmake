@@ -16,6 +16,14 @@ cmake_minimum_required(VERSION 2.8)
 
 # Host jerry for snapshot generation
 set(DEPS_HOST_JERRY deps/jerry-host)
+if ("${CMAKE_HOST_SYSTEM_NAME}" STREQUAL "Linux")
+  set(JERRY_HOST_C_FLAGS_INIT "-Wno-error=maybe-uninitialized")
+endif()
+
+if (USING_MSVC)
+  set(JERRY_HOST_C_FLAGS_INIT "-DWIN32")
+endif()
+
 ExternalProject_Add(hostjerry
   PREFIX ${DEPS_HOST_JERRY}
   SOURCE_DIR ${ROOT_DIR}/deps/jerry/
@@ -23,6 +31,7 @@ ExternalProject_Add(hostjerry
   BINARY_DIR ${DEPS_HOST_JERRY}
   CMAKE_ARGS
     -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    -DCMAKE_C_FLAGS=${JERRY_HOST_C_FLAGS_INIT}
     -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/${DEPS_HOST_JERRY}
     -DENABLE_AMALGAM=ON
     -DENABLE_LTO=${ENABLE_LTO}
