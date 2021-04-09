@@ -46,6 +46,7 @@ ExternalProject_Add(libtuv
     -DBUILDAPIEMULTESTER=NO
     -DTARGET_SYSTEMROOT=${TARGET_SYSTEMROOT}
     -DTARGET_BOARD=${TARGET_BOARD}
+  BUILD_BYPRODUCTS ${CMAKE_BINARY_DIR}/lib/${LIBTUV_NAME}
 )
 add_library(tuv STATIC IMPORTED)
 add_dependencies(tuv libtuv)

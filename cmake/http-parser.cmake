@@ -38,6 +38,7 @@ ExternalProject_Add(http-parser
     -DOS=${TARGET_OS}
     ${HTTPPARSER_NUTTX_ARG}
     -DENABLE_MEMORY_CONSTRAINTS=ON
+  BUILD_BYPRODUCTS ${CMAKE_BINARY_DIR}/lib/${HTTPPARSER_NAME}
 )
 add_library(libhttp-parser STATIC IMPORTED)
 add_dependencies(libhttp-parser http-parser)

@@ -50,6 +50,11 @@ else()
   build_lib_name(MBED_X509_NAME mbedx509)
   build_lib_name(MBED_TLS_NAME mbedtls)
   build_lib_name(MBED_CRYPTO_NAME mbedcrypto)
+  set(MBEDTLS_BUILD_BYPRODUCTS
+    ${ARCHIVE_DIR}/${MBED_X509_NAME}
+    ${ARCHIVE_DIR}/${MBED_TLS_NAME}
+    ${ARCHIVE_DIR}/${MBED_CRYPTO_NAME}
+  )
   ExternalProject_Add(mbedtls
     PREFIX ${DEPS_MBEDTLS}
     SOURCE_DIR ${DEPS_MBEDTLS_SRC}
@@ -68,6 +73,7 @@ else()
       -DCMAKE_C_FLAGS=${CMAKE_C_FLAGS}
       -DENABLE_PROGRAMS=OFF
       -DENABLE_TESTING=OFF
+    BUILD_BYPRODUCTS ${MBEDTLS_BUILD_BYPRODUCTS}
   )
 
   # define external mbedtls target
@@ -90,9 +96,7 @@ else()
 
   set_property(DIRECTORY APPEND PROPERTY
     ADDITIONAL_MAKE_CLEAN_FILES
-    ${ARCHIVE_DIR}/${MBED_X509_NAME}
-    ${ARCHIVE_DIR}/${MBED_TLS_NAME}
-    ${ARCHIVE_DIR}/${MBED_CRYPTO_NAME}
+    ${MBEDTLS_BUILD_BYPRODUCTS}
   )
 
   set(MBEDTLS_LIBS libmbedtls libmbedx509 libmbedcrypto)

@@ -26,6 +26,13 @@ if(NOT DEFINED TARGET_OS)
     "TARGET_OS not specified, using '${TARGET_OS}' from CMAKE_SYSTEM_NAME")
 endif()
 
+if(CMAKE_GENERATOR MATCHES "Visual Studio")
+  set(CONFIG_TYPE $<$<CONFIG:Debug>:Debug>)
+  set(CONFIG_TYPE ${CONFIG_TYPE}$<$<CONFIG:Release>:Release>)
+  set(CONFIG_TYPE ${CONFIG_TYPE}$<$<CONFIG:RelWithDebInfo>:RelWithDebInfo>)
+  set(CONFIG_TYPE ${CONFIG_TYPE}$<$<CONFIG:MinSizeRel>:MinSizeRel>)
+endif()
+
 if(NOT CMAKE_BUILD_TYPE)
   message("CMAKE_BUILD_TYPE was not set! Configuring for Debug build!")
   set(CMAKE_BUILD_TYPE Debug)
@@ -69,7 +76,6 @@ endmacro()
 
 if(CMAKE_C_COMPILER_ID MATCHES "MSVC")
   set(USING_MSVC 1)
-  set(CONFIG_TYPE $<$<CONFIG:Debug>:Debug>$<$<CONFIG:Release>:Release>)
   # disable warning C4820: 'x' bytes padding added after construct 'membername'
   iotjs_add_compile_flags(-wd4820)
   # disable warning C4668: 'symbol' is not defined as preprocessor macro,

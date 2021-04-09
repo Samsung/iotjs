@@ -16,6 +16,14 @@ cmake_minimum_required(VERSION 2.8)
 
 # Host jerry for snapshot generation
 set(DEPS_HOST_JERRY deps/jerry-host)
+
+set(JERRY_HOST_SNAPSHOT
+    ${CMAKE_BINARY_DIR}/${DEPS_HOST_JERRY}/bin/jerry-snapshot)
+
+set(JERRY_HOST_BUILD_BYPRODUCTS
+  ${JERRY_HOST_SNAPSHOT}
+)
+
 ExternalProject_Add(hostjerry
   PREFIX ${DEPS_HOST_JERRY}
   SOURCE_DIR ${ROOT_DIR}/deps/jerry/
@@ -46,9 +54,8 @@ ExternalProject_Add(hostjerry
     # can not be represented correctly in the JerryScript engine
     # currently.
     -DJERRY_SYSTEM_ALLOCATOR=OFF
+  BUILD_BYPRODUCTS ${JERRY_HOST_BUILD_BYPRODUCTS}
 )
-set(JERRY_HOST_SNAPSHOT
-    ${CMAKE_BINARY_DIR}/${DEPS_HOST_JERRY}/bin/jerry-snapshot)
 add_executable(jerry-snapshot IMPORTED)
 add_dependencies(jerry-snapshot hostjerry)
 set_property(TARGET jerry-snapshot PROPERTY
@@ -120,6 +127,22 @@ separate_arguments(EXTRA_JERRY_CMAKE_PARAMS)
 build_lib_name(JERRY_CORE_NAME jerry-core)
 build_lib_name(JERRY_LIBM_NAME jerry-math)
 build_lib_name(JERRY_EXT_NAME jerry-ext)
+build_lib_name(JERRY_PORT_DEFAULT_NAME jerry-port-default)
+build_lib_name(JERRY_PORT_DEFAULT_MINIMAL_NAME jerry-port-default-minimal)
+
+set(JERRY_LIB_BUILD_BYPRODUCTS
+  ${CMAKE_BINARY_DIR}/lib/${JERRY_CORE_NAME}
+  ${CMAKE_BINARY_DIR}/lib/${JERRY_LIBM_NAME}
+  ${CMAKE_BINARY_DIR}/lib/${JERRY_EXT_NAME}
+)
+
+if(NOT "${TARGET_OS}" MATCHES "NUTTX|TIZENRT")
+  list(APPEND JERRY_LIB_BUILD_BYPRODUCTS
+    ${CMAKE_BINARY_DIR}/lib/${JERRY_PORT_DEFAULT_NAME}
+    ${CMAKE_BINARY_DIR}/lib/${JERRY_PORT_DEFAULT_MINIMAL_NAME}
+  )
+endif()
+
 
 set(DEPS_LIB_JERRY deps/jerry)
 set(DEPS_LIB_JERRY_SRC ${ROOT_DIR}/${DEPS_LIB_JERRY})
@@ -148,13 +171,11 @@ ExternalProject_Add(libjerry
     -DENABLE_LTO=${ENABLE_LTO}
     ${DEPS_LIB_JERRY_ARGS}
     ${EXTRA_JERRY_CMAKE_PARAMS}
+  BUILD_BYPRODUCTS ${JERRY_LIB_BUILD_BYPRODUCTS}
 )
 
 set_property(DIRECTORY APPEND PROPERTY
-  ADDITIONAL_MAKE_CLEAN_FILES
-    ${CMAKE_BINARY_DIR}/lib/${JERRY_CORE_NAME}
-    ${CMAKE_BINARY_DIR}/lib/${JERRY_LIBM_NAME}
-    ${CMAKE_BINARY_DIR}/lib/${JERRY_EXT_NAME}
+  ADDITIONAL_MAKE_CLEAN_FILES ${JERRY_LIB_BUILD_BYPRODUCTS}
 )
 
 # define external jerry-core target
@@ -176,13 +197,6 @@ set_property(TARGET jerry-ext PROPERTY
   IMPORTED_LOCATION ${CMAKE_BINARY_DIR}/lib/${JERRY_EXT_NAME})
 
 if(NOT "${TARGET_OS}" MATCHES "NUTTX|TIZENRT")
-  build_lib_name(JERRY_PORT_NAME jerry-port)
-  build_lib_name(JERRY_PORT_DEFAULT_NAME jerry-port-default)
-  set_property(DIRECTORY APPEND PROPERTY
-    ADDITIONAL_MAKE_CLEAN_FILES
-      ${CMAKE_BINARY_DIR}/lib/${JERRY_PORT_NAME}
-  )
-
   # define external jerry-port-default target
   add_library(jerry-port-default STATIC IMPORTED)
   add_dependencies(jerry-port-default libjerry)
