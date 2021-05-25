@@ -24,6 +24,7 @@ var server_message = '';
 var server_closed = false;
 var server_handshake_done = false;
 var handshake_done = false;
+var endCount = 0;
 
 var port = 8080;
 
@@ -31,7 +32,7 @@ var server_options = {
   key: fs.readFileSync(process.cwd() + '/resources/my_key.key').toString(),
   cert: fs.readFileSync(process.cwd() + '/resources/my_crt.crt'),
   rejectUnauthorized: false,
-  isServer: true
+  isServer: true,
 };
 
 var server = tls.createServer(server_options, function(socket) {
@@ -41,7 +42,7 @@ var server = tls.createServer(server_options, function(socket) {
     client_message = data.toString();
   });
 
-}).listen(port, function() {});
+}).listen(port, startTesting);
 
 server.on('secureConnection', function() {
   server_handshake_done = true;
@@ -51,47 +52,57 @@ server.on('close', function() {
   server_closed = true;
 });
 
-var socket1 = tls.connect(port);
+function endCallback() {
+  endCount += 1;
+  if (endCount === 3) {
+    server.close();
+  }
+}
 
-socket1.on('secureConnect', function() {
-  handshake_done = true;
-});
+function startTesting() {
+  var socket1 = tls.connect(port);
 
-socket1.on('data', function(data) {
-  server_message = data.toString();
-  socket1.write('Client hello');
-  socket1.end();
-});
+  socket1.on('secureConnect', function() {
+    handshake_done = true;
+  });
 
-var socket2 = tls.connect(port, 'localhost');
+  socket1.on('data', function(data) {
+    server_message = data.toString();
+    socket1.write('Client hello');
+    socket1.end();
+  });
+  socket1.on('end', endCallback);
 
-socket2.on('secureConnect', function() {
-  handshake_done = true;
-});
+  var socket2 = tls.connect(port, 'localhost');
 
-socket2.on('data', function(data) {
-  server_message = data.toString();
-  socket2.write('Client hello');
-  socket2.end();
-});
+  socket2.on('secureConnect', function() {
+    handshake_done = true;
+  });
 
-var socket3 = tls.connect(port, function() {});
+  socket2.on('data', function(data) {
+    server_message = data.toString();
+    socket2.write('Client hello');
+    socket2.end();
+  });
+  socket2.on('end', endCallback);
 
-socket3.on('secureConnect', function() {
-  handshake_done = true;
-});
+  var socket3 = tls.connect(port, function() {});
 
-socket3.on('data', function(data) {
-  server_message = data.toString();
-  socket3.write('Client hello');
-  socket3.end();
-});
+  socket3.on('secureConnect', function() {
+    handshake_done = true;
+  });
 
-socket3.on('end', function() {
-  server.close();
-});
+  socket3.on('data', function(data) {
+    server_message = data.toString();
+    socket3.write('Client hello');
+    socket3.end();
+  });
+
+  socket3.on('end', endCallback);
+}
 
 process.on('exit', function() {
+  assert.equal(endCount, 3);
   assert.equal(handshake_done, true);
   assert.equal(server_handshake_done, true);
   assert.equal(client_message === expected_client_msg, true);

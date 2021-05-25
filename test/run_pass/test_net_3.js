@@ -19,17 +19,17 @@ var assert = require('assert');
 
 
 var port = 22703;
-var limit = 200;
+var limit = 233;
 var server = net.createServer();
 
-server.listen({ port: port });
+server.listen({ port: port }, startTesting);
 
 server.on('connection', function(socket) {
   var i = 0;
   var writing = function() {
     var ok;
     do {
-      ok = socket.write("" + (i % 10));
+      ok = socket.write('' + (i % 10));
       if (++i == limit) {
         socket.end();
         ok = false;
@@ -40,47 +40,59 @@ server.on('connection', function(socket) {
   writing();
 });
 
-
 var msg1 = '';
-var socket1 = net.createConnection(port);
-
-socket1.on('data', function(data) {
-  msg1 += data;
-});
-
-
 var msg2 = '';
-var socket2 = net.createConnection({port: port});
-
-socket2.on('data', function(data) {
-  msg2 += data;
-});
-
-
 var msg3 = '';
-var socket3 = net.createConnection({port: port, host: '127.0.0.1'});
-
-socket3.on('data', function(data) {
-  msg3 += data;
-});
-
-
 var msg4 = '';
+var endCount = 0;
 var connectListenerCheck = false;
-var socket4 = net.createConnection({port: port}, function() {
-  connectListenerCheck = true;
-});
 
-socket4.on('data', function(data) {
-  msg4 += data;
-});
+function endCallback() {
+  endCount += 1;
+  if (endCount === 4) {
+    server.close();
+  }
+}
 
-socket4.on('end', function() {
-  server.close();
-});
+function startTesting() {
+  var socket1 = net.createConnection(port);
 
+  socket1.on('data', function(data) {
+    msg1 += data;
+  });
+  socket1.on('end', endCallback);
+
+
+  var socket2 = net.createConnection({port: port});
+
+  socket2.on('data', function(data) {
+    msg2 += data;
+  });
+  socket2.on('end', endCallback);
+
+
+  var socket3 = net.createConnection({port: port, host: '127.0.0.1'});
+
+  socket3.on('data', function(data) {
+    msg3 += data;
+  });
+  socket3.on('end', endCallback);
+
+
+  var socket4 = net.createConnection({port: port}, function() {
+    connectListenerCheck = true;
+  });
+
+  socket4.on('data', function(data) {
+    msg4 += data;
+  });
+
+  socket4.on('end', endCallback);
+}
 
 process.on('exit', function(code) {
+  assert.equal(code, 0);
+  assert.equal(endCount, 4);
   assert.equal(msg1.length, limit);
   assert.equal(msg2.length, limit);
   assert.equal(msg3.length, limit);

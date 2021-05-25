@@ -42,7 +42,7 @@ var server = http.createServer(function (req, res) {
 
 });
 
-server.listen(3005,5);
+server.listen(3005,5, startTesting);
 
 
 // 1. GET req
@@ -67,32 +67,34 @@ var getResponseHandler = function (res) {
   });
 };
 
-http.get(options, getResponseHandler);
+function startTesting() {
+  http.get(options, getResponseHandler);
 
 
-// 2. close server req
-var finalMsg = 'close server';
-var finalOptions = {
-  method : 'POST',
-  port : 3005,
-  headers : {'Content-Length': finalMsg.length}
-};
-
-var finalResponseHandler = function (res) {
-  var res_body = '';
-
-  assert.equal(200, res.statusCode);
-
-  var endHandler = function(){
-    assert.equal(finalMsg, res_body);
+  // 2. close server req
+  var finalMsg = 'close server';
+  var finalOptions = {
+    method : 'POST',
+    port : 3005,
+    headers : {'Content-Length': finalMsg.length}
   };
-  res.on('end', endHandler);
 
-  res.on('data', function(chunk){
-    res_body += chunk.toString();
-  });
-};
+  var finalResponseHandler = function (res) {
+    var res_body = '';
 
-var finalReq = http.request(finalOptions, finalResponseHandler);
-finalReq.write(finalMsg);
-finalReq.end();
+    assert.equal(200, res.statusCode);
+
+    var endHandler = function(){
+      assert.equal(finalMsg, res_body);
+    };
+    res.on('end', endHandler);
+
+    res.on('data', function(chunk){
+      res_body += chunk.toString();
+    });
+  };
+
+  var finalReq = http.request(finalOptions, finalResponseHandler);
+  finalReq.write(finalMsg);
+  finalReq.end();
+}

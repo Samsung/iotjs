@@ -64,7 +64,7 @@ server.on('close', function() {
   serverCloseEvent++;
 });
 
-server.listen(3001, 3);
+server.listen(3001, 3, startTestingPost);
 
 
 // client side code
@@ -82,101 +82,106 @@ var options = {
 };
 
 
-var postResponseHandler = function (res) {
-  var res_body = '';
+function startTestingPost() {
+  var postResponseHandler = function (res) {
+    var res_body = '';
 
-  assert.equal(200, res.statusCode);
-  var endHandler = function(){
-    assert.equal(msg, res_body);
-    responseCheck += '1';
+    assert.equal(200, res.statusCode);
+    var endHandler = function(){
+      assert.equal(msg, res_body);
+      responseCheck += '1';
+      startTestingGet();
+    };
+    res.on('end', endHandler);
+
+    res.on('data', function(chunk){
+      res_body += chunk.toString();
+    });
   };
-  res.on('end', endHandler);
 
-  res.on('data', function(chunk){
-    res_body += chunk.toString();
+  var req = http.request(options, postResponseHandler);
+  req.on('response', function() {
+    responseEvent++;
   });
-};
+  req.on('socket', function() {
+    socketEvent++;
+  });
+  req.write(msg);
+  req.end();
+}
 
-var req = http.request(options, postResponseHandler);
-req.on('response', function() {
-  responseEvent++;
-});
-req.on('socket', function() {
-  socketEvent++;
-});
-req.write(msg);
-req.end();
-
-
-// 2. GET req
-options = {
-  method : 'GET',
-  port : 3001
-};
-
-var getResponseHandler = function (res) {
-  var res_body = '';
-
-  assert.equal(200, res.statusCode);
-
-  var endHandler = function(){
-    // GET msg, no received body
-    assert.equal('', res_body);
-    responseCheck += '2';
+function startTestingGet() {
+  // 2. GET req
+  options = {
+    method : 'GET',
+    port : 3001
   };
-  res.on('end', endHandler);
 
-  res.on('data', function(chunk){
-    res_body += chunk.toString();
-  });
-};
+  var getResponseHandler = function (res) {
+    var res_body = '';
 
+    assert.equal(200, res.statusCode);
 
-var getReq = http.request(options, getResponseHandler);
-getReq.on('response', function() {
-  responseEvent++;
-});
-getReq.on('socket', function() {
-  socketEvent++;
-});
-getReq.end();
+    var endHandler = function(){
+      // GET msg, no received body
+      assert.equal('', res_body);
+      responseCheck += '2';
+      startTestingFinal();
+    };
+    res.on('end', endHandler);
 
-
-
-// 3. close server req
-var finalMsg = 'close server';
-var finalOptions = {
-  method : 'POST',
-  port : 3001,
-  rejectUnauthorized: false,
-  headers : {'Content-Length': finalMsg.length}
-};
-
-var finalResponseHandler = function (res) {
-  var res_body = '';
-
-  assert.equal(200, res.statusCode);
-
-  var endHandler = function(){
-    assert.equal(finalMsg, res_body);
-    responseCheck += '3';
+    res.on('data', function(chunk){
+      res_body += chunk.toString();
+    });
   };
-  res.on('end', endHandler);
 
-  res.on('data', function(chunk){
-    res_body += chunk.toString();
+
+  var getReq = http.request(options, getResponseHandler);
+  getReq.on('response', function() {
+    responseEvent++;
   });
-};
+  getReq.on('socket', function() {
+    socketEvent++;
+  });
+  getReq.end();
+}
 
-var finalReq = http.request(finalOptions, finalResponseHandler);
-finalReq.on('response', function() {
-  responseEvent++;
-});
-finalReq.on('socket', function() {
-  socketEvent++;
-});
-finalReq.write(finalMsg);
-finalReq.end();
+function startTestingFinal() {
+  // 3. close server req
+  var finalMsg = 'close server';
+  var finalOptions = {
+    method : 'POST',
+    port : 3001,
+    rejectUnauthorized: false,
+    headers : {'Content-Length': finalMsg.length}
+  };
+
+  var finalResponseHandler = function (res) {
+    var res_body = '';
+
+    assert.equal(200, res.statusCode);
+
+    var endHandler = function(){
+      assert.equal(finalMsg, res_body);
+      responseCheck += '3';
+    };
+    res.on('end', endHandler);
+
+    res.on('data', function(chunk){
+      res_body += chunk.toString();
+    });
+  };
+
+  var finalReq = http.request(finalOptions, finalResponseHandler);
+  finalReq.on('response', function() {
+    responseEvent++;
+  });
+  finalReq.on('socket', function() {
+    socketEvent++;
+  });
+  finalReq.write(finalMsg);
+  finalReq.end();
+}
 
 // Create server without requestListener.
 var server2 = http.createServer();

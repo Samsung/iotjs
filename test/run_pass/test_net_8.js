@@ -32,7 +32,6 @@ server.on('connection', function(socket) {
     socket.end(data);
   });
   socket.on('close', function() {
-    server.close();
   });
 });
 
@@ -46,6 +45,7 @@ sock2.connect(port, 'localhost');
 
 sock1.on('data', function(data) {
   msg += data;
+  sendSock2Data();
 });
 
 sock1.on('end', function() {
@@ -58,15 +58,16 @@ sock2.on('data', function(data) {
 
 sock2.on('end', function() {
   sock2.end();
+  server.close();
 });
 
 timers.setTimeout(function() {
   sock1.write('1');
 }, 1000);
 
-timers.setTimeout(function() {
+function sendSock2Data() {
   sock2.write('2');
-}, 2000);
+}
 
 process.on('exit', function(code) {
   assert.equal(code, 0);

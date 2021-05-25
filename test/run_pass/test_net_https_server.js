@@ -25,7 +25,7 @@ var server_options = {
 var server = https.createServer(server_options, function(req, res) {
   res.writeHead(200);
   res.end('hello world\n');
-}).listen(8000);
+}).listen(8000, startTesting);
 
 
 var client_options = {
@@ -41,14 +41,15 @@ var responseHandler = function (res) {
 
   var endHandler = function(){
     assert.equal(res_body, 'hello world\n');
+    server.close();
   };
   res.on('end', endHandler);
 
   res.on('data', function(chunk){
     res_body += chunk.toString();
   });
-
-  server.close();
 }
 
-https.get(client_options, responseHandler);
+function startTesting() {
+  https.get(client_options, responseHandler);
+}
