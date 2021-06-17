@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cmake_minimum_required(VERSION 2.8)
-
 # Host jerry for snapshot generation
 set(DEPS_HOST_JERRY deps/jerry-host)
 ExternalProject_Add(hostjerry
